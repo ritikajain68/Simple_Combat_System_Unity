@@ -1,21 +1,16 @@
 using UnityEngine;
-using System.Linq;
 
 public class Weapon : MonoBehaviour
 {
-    public float damage = 10f;
-    public float cooldown = 1.5f;
-    private float lastAttackTime = 0f;
+    public GameObject bulletPrefab;
+    public Transform firePoint;
+    public float attackSpeed = 1f;
+    public float range = 8f;
 
-    public void TryAttack(CharacterSetup self)
+    public void Fire(Transform target)
     {
-        if (Time.time - lastAttackTime < cooldown) return;
-
-        var target = BattleManager.Instance.GetNearestEnemy(self);
-        if (target != null)
-        {
-            target.TakeDamage(damage);
-            lastAttackTime = Time.time;
-        }
+        GameObject bulletObj = Instantiate(bulletPrefab, firePoint.position, Quaternion.identity);
+        Bullet bullet = bulletObj.GetComponent<Bullet>();
+        bullet.Init(target, transform.root.GetComponent<CharacterSetup>());
     }
 }

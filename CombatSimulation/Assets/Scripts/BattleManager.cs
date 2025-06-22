@@ -1,45 +1,48 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System.Linq;
 
 public class BattleManager : MonoBehaviour
 {
     public static BattleManager Instance;
+    public GameObject characterPrefab;
+    public Transform spawnArea;
+    public int characterCount = 10;
 
-    public List<CharacterSetup> characters;
+    private List<CharacterSetup> characters = new List<CharacterSetup>();
 
-    private void Awake()
-    {
-        Instance = this;
-    }
+    void Awake() => Instance = this;
 
     void Start()
     {
-        // You can randomize or manually assign weapons, names, etc.
-        foreach (CharacterSetup c in characters)
+        SpawnCharacters();
+    }
+
+    void SpawnCharacters()
+    {
+        for (int i = 0; i < characterCount; i++)
         {
-            c.weapon = Instantiate(c.weapon);
+            Vector3 pos = spawnArea.position + Random.insideUnitSphere * 10f;
+            pos.y = 0f;
+            GameObject go = Instantiate(characterPrefab, pos, Quaternion.identity);
+            go.name = $"Fighter_{i + 1}";
+            characters.Add(go.GetComponent<CharacterSetup>());
         }
     }
 
-    public CharacterSetup GetNearestEnemy(CharacterSetup attacker)
+    public Transform GetRandomTarget(CharacterSetup requester)
     {
-        return characters
-            .Where(c => c != attacker && c.isAlive)
-            .OrderBy(c => Vector3.Distance(attacker.transform.position, c.transform.position))
-            .FirstOrDefault();
+        List<CharacterSetup> alive = characters.FindAll(c => c != requester && c.isAlive);
+        if (alive.Count == 0) return null;
+        return alive[Random.Range(0, alive.Count)].transform;
     }
 
-    public void CheckBattleOutcome()
+    public void CheckBattleState()
     {
-        var alive = characters.Where(c => c.isAlive).ToList();
+        List<CharacterSetup> alive = characters.FindAll(c => c.isAlive);
         if (alive.Count == 1)
         {
-            Debug.Log("Winner: " + alive[0].characterName);
-        }
-        else if (alive.Count == 0)
-        {
-            Debug.Log("Draw! Everyone died!");
+            Debug.Log("🏆 Winner: " + alive[0].name);
+            UIManager.Instance.ShowWinner(alive[0].name);
         }
     }
 }

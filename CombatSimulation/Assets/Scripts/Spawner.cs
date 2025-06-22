@@ -1,22 +1,44 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class Spawner : MonoBehaviour
 {
+    [Header("Spawner Settings")]
     public GameObject characterPrefab;
-    public BattleManager battleManager;
-    public float radius = 10f;
+    public int characterCount = 10;
+    public float spawnRadius = 10f;
 
-    void Start()
+    [Header("Spawn Area Reference")]
+    public Transform centerPoint;
+
+    public List<GameObject> SpawnedCharacters { get; private set; } = new List<GameObject>();
+
+    public void SpawnCharacters()
     {
-        for (int i = 0; i < 10; i++)
+        ClearExisting();
+
+        for (int i = 0; i < characterCount; i++)
         {
-            float angle = i * Mathf.PI * 2 / 10;
-            Vector3 position = new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle)) * radius;
-            GameObject characterObj = Instantiate(characterPrefab, position, Quaternion.identity);
-            CharacterSetup character = characterObj.GetComponent<CharacterSetup>();
-            character.weapon = characterObj.GetComponentInChildren<Weapon>();
-            character.characterName = "Fighter " + (i + 1);
-            battleManager.characters.Add(character);
+            Vector3 randomPos = GetRandomPosition(centerPoint.position, spawnRadius);
+            GameObject newChar = Instantiate(characterPrefab, randomPos, Quaternion.identity);
+            newChar.name = $"Fighter_{i + 1}";
+            SpawnedCharacters.Add(newChar);
         }
+    }
+
+    private Vector3 GetRandomPosition(Vector3 center, float radius)
+    {
+        Vector2 randCircle = Random.insideUnitCircle * radius;
+        return new Vector3(center.x + randCircle.x, center.y, center.z + randCircle.y);
+    }
+
+    public void ClearExisting()
+    {
+        foreach (GameObject obj in SpawnedCharacters)
+        {
+            if (obj != null)
+                Destroy(obj);
+        }
+        SpawnedCharacters.Clear();
     }
 }
