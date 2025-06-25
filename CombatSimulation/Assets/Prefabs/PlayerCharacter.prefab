@@ -1648,7 +1648,8 @@ MonoBehaviour:
   health: 100
   speed: 3.5
   isAlive: 1
-  isPlayerMesh: 1
+  animator: {fileID: 1667580933067835625}
+  agent: {fileID: 4777797846282752375}
   weaponPrefab: {fileID: 6949219968297497114, guid: 55b1fd5f577255c4a8338b61385780ec, type: 3}
   weapon: {fileID: 0}
 --- !u!1 &6000966846518242226

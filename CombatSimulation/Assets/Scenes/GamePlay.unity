@@ -1783,7 +1783,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aa2aa2b6e6e9df04199a6f4cddfeb051, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  characterPrefab: {fileID: 5952044872412902805, guid: b55d56bfa77543845960380e807b28c7, type: 3}
+  characterPrefab: {fileID: 5952044872412902805, guid: 3cdd48b3e9debad428bd25e2969d9822, type: 3}
   characterCount: 10
   spawnRadius: 10
   centerPoint: {fileID: 727971725}
@@ -1905,7 +1905,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 64e5c6a15ca5c1a46bb4db9ad7a1b0ba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  characterPrefab: {fileID: 5952044872412902805, guid: b55d56bfa77543845960380e807b28c7, type: 3}
+  characterPrefab: {fileID: 5952044872412902805, guid: 3cdd48b3e9debad428bd25e2969d9822, type: 3}
   spawnArea: {fileID: 727971725}
   characterCount: 10
 --- !u!1 &1394661049 stripped

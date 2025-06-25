@@ -4,64 +4,66 @@ using System.Linq;
 
 public class PlayerSetup : MonoBehaviour
 {
-    public float health = 100f;
+    public float maxHealth = 1000f;
+    public float health ;
     public float speed = 3.5f;
     public bool isAlive = true;
-    public bool isPlayerMesh = false;
 
+    public Animator animator;
+    public NavMeshAgent agent;
     public GameObject weaponPrefab;
-    private GameObject weaponInstance;
-    private NavMeshAgent agent;
-    private Transform target;
     public PlayerWeapon weapon;
-
+    private GameObject weaponInstance;
     private Transform bulletSpawnPoint;
+    private Transform target;
 
     void Start()
-    {
-        agent = GetComponent<NavMeshAgent>();
-        if (agent != null) agent.speed = speed;
+    {        
+        health = maxHealth;
+        agent.speed = speed;
 
-        if (isPlayerMesh)
+        AttachWeaponToHand();
+        if (weapon == null)
         {
-            AttachWeaponToHand();
-        }
-
-        if (!agent.isOnNavMesh)
-        {
-            Debug.LogWarning($"{gameObject.name} is not on the NavMesh!");
+            Debug.LogError(" Weapon not attached properly.");
             return;
         }
-
         InvokeRepeating(nameof(FindTarget), 0f, 1f);
-        InvokeRepeating(nameof(Attack), 1f, weapon?.attackSpeed ?? 1f);
+        float randomDelay = Random.Range(0f, weapon.attackSpeed);
+        InvokeRepeating(nameof(Attack), randomDelay, weapon.attackSpeed);
     }
 
     void Update()
     {
-        if (!isAlive || target == null || agent == null) return;
+        if (!isAlive || target == null) return;
 
         agent.SetDestination(target.position);
 
+        bool isMoving = agent.velocity.magnitude > 0.1f;
+        animator.SetBool("isWalking", isMoving);
+
         if (Vector3.Distance(transform.position, target.position) <= weapon.range)
         {
+            // Face target
             Vector3 dir = (target.position - transform.position).normalized;
             Quaternion rot = Quaternion.LookRotation(dir);
             transform.rotation = Quaternion.Slerp(transform.rotation, rot, Time.deltaTime * 5f);
         }
     }
 
-    public void FindTarget()
+    void FindTarget()
     {
         target = PlayerBattleManager.Instance.GetRandomTarget(this);
     }
 
-    public void Attack()
+    void Attack()
     {
         if (!isAlive || target == null) return;
 
-        if (Vector3.Distance(transform.position, target.position) <= weapon.range)
+        float dist = Vector3.Distance(transform.position, target.position);
+        if (dist <= weapon.range)
         {
+            animator.SetTrigger("isShooting");
             weapon.Fire(target);
         }
     }
@@ -69,41 +71,41 @@ public class PlayerSetup : MonoBehaviour
     public void TakeDamage(float amount)
     {
         health -= amount;
+        health = Mathf.Clamp(health, 0, maxHealth);
+
         if (health <= 0f && isAlive)
         {
             isAlive = false;
             gameObject.SetActive(false);
+            transform.parent?.gameObject.SetActive(false); // safely disables parent container
+
             PlayerBattleManager.Instance.CheckBattleState();
+            Debug.Log($"{gameObject.name} took fatal damage.");
         }
     }
 
     void AttachWeaponToHand()
-    {
+    {        
         Transform hand = GetComponentsInChildren<Transform>()
                          .FirstOrDefault(t => t.CompareTag("WeaponSocket"));
 
-        if (hand == null)
+        if (hand != null && weaponPrefab != null)
         {
-            Debug.LogError("WeaponSocket tag not found.");
-            return;
+            weaponInstance = Instantiate(weaponPrefab, hand);
+            weaponInstance.transform.localPosition = Vector3.zero;
+            weaponInstance.transform.localRotation = Quaternion.identity;
+
+            weapon = weaponInstance.GetComponent<PlayerWeapon>();
+
+            bulletSpawnPoint = weaponInstance.transform.Find("Barrel");
+            if (bulletSpawnPoint != null)
+                weapon.bulletSpawnPoint = bulletSpawnPoint;
+            else
+                Debug.LogWarning(" Barrel not found on weapon prefab.");
         }
-
-        weaponInstance = Instantiate(weaponPrefab, hand);
-        weaponInstance.transform.localPosition = Vector3.zero;
-        weaponInstance.transform.localRotation = Quaternion.identity;
-
-        bulletSpawnPoint = weaponInstance.transform.Find("Barrel");
-
-        if (bulletSpawnPoint == null)
+        else
         {
-            Debug.LogError("Barrel not found in weapon.");
-            return;
-        }
-
-        weapon = weaponInstance.GetComponent<PlayerWeapon>();
-        if (weapon != null)
-        {
-            weapon.bulletSpawnPoint = bulletSpawnPoint;
+            Debug.LogError("WeaponSocket or weaponPrefab is missing.");
         }
     }
 }

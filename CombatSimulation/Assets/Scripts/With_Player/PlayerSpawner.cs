@@ -4,50 +4,48 @@ using System.Collections.Generic;
 public class PlayerSpawner : MonoBehaviour
 {
     [Header("Spawner Settings")]
-    public GameObject characterPrefab;
+    public GameObject characterPrefab;   // Root prefab that contains child with PlayerSetup
     public int characterCount = 10;
     public float spawnRadius = 10f;
 
-    [Header("Spawn Area Reference")]
+    [Header("Center Point for Spawn Circle")]
     public Transform centerPoint;
 
-    public List<GameObject> spawnedPlayers { get; private set; } = new List<GameObject>();
+    public List<GameObject> SpawnedPlayers { get; private set; } = new List<GameObject>();
 
     public void SpawnCharacters()
     {
         ClearExisting();
 
-        float radius = spawnRadius;
         float angleStep = 360f / characterCount;
 
         for (int i = 0; i < characterCount; i++)
         {
             float angle = i * angleStep * Mathf.Deg2Rad;
-            Vector3 pos = new Vector3(
-                centerPoint.position.x + Mathf.Cos(angle) * radius,
-                centerPoint.position.y,
-                centerPoint.position.z + Mathf.Sin(angle) * radius
+
+            Vector3 offset = new Vector3(
+                Mathf.Cos(angle) * spawnRadius,
+                0f,
+                Mathf.Sin(angle) * spawnRadius
             );
 
-            GameObject newChar = Instantiate(characterPrefab, pos, Quaternion.identity);
-            newChar.name = $"Player{i + 1}";
-            spawnedPlayers.Add(newChar); // ✅ lowercase fix
-        }
-    }
+            Vector3 spawnPos = centerPoint.position + offset;
 
-    private Vector3 GetRandomPosition(Vector3 center, float radius)
-    {
-        Vector2 randCircle = Random.insideUnitCircle * radius;
-        return new Vector3(center.x + randCircle.x, center.y, center.z + randCircle.y);
+            GameObject newChar = Instantiate(characterPrefab, spawnPos, Quaternion.identity);
+            newChar.name = $"Player_{i + 1}";
+
+            SpawnedPlayers.Add(newChar);
+        }
     }
 
     public void ClearExisting()
     {
-        foreach (GameObject obj in spawnedPlayers)
+        foreach (GameObject obj in SpawnedPlayers)
         {
             if (obj != null)
                 Destroy(obj);
         }
-        spawnedPlayers.Clear();
+
+        SpawnedPlayers.Clear();
     }
 }

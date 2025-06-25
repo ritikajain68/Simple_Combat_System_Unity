@@ -3,36 +3,20 @@ using UnityEngine;
 public class PlayerWeapon : MonoBehaviour
 {
     public GameObject bulletPrefab;
-    public float bulletSpeed = 50f;
-    public float attackSpeed = 1f;
-    public float range = 20f;
-
-    [HideInInspector]
+    public float bulletSpeed = 30f;
+    public float attackSpeed = 1.25f;
+    public float range = 15f;
     public Transform bulletSpawnPoint;
 
     public void Fire(Transform target)
     {
-        if (target == null)
-        {
-            Debug.LogWarning("No target to shoot at.");
-            return;
-        }
+        if (target == null || bulletSpawnPoint == null) return;
 
-        if (bulletSpawnPoint == null)
-        {
-            Debug.LogError("Bullet spawn point not set.");
-            return;
-        }
+        Vector3 aim = target.position + Vector3.up * 1.2f;
+        Vector3 direction = (aim - bulletSpawnPoint.position).normalized;
 
-        Vector3 spawnPos = bulletSpawnPoint.position;
-        Vector3 aimPoint = target.position + Vector3.up * 1.2f;
-        Vector3 direction = (aimPoint - spawnPos).normalized;
-
-        GameObject bullet = Instantiate(bulletPrefab);
-        bullet.transform.position = spawnPos;
-        bullet.transform.rotation = Quaternion.LookRotation(direction);
-        bullet.transform.localScale = Vector3.one * 0.3f;
-        bullet.transform.SetParent(null); // detach from weapon
+        GameObject bullet = Instantiate(bulletPrefab, bulletSpawnPoint.position, Quaternion.LookRotation(direction));
+        bullet.transform.localScale = Vector3.one * 1.5f;
 
         PlayerBullet pb = bullet.GetComponent<PlayerBullet>();
         if (pb != null)
@@ -45,8 +29,5 @@ public class PlayerWeapon : MonoBehaviour
         {
             rb.linearVelocity = direction * bulletSpeed;
         }
-
-        Debug.DrawRay(spawnPos, direction * 5f, Color.green, 2f);
-        Debug.Log($"{gameObject.name} fired toward {target.name} at {aimPoint}");
     }
 }

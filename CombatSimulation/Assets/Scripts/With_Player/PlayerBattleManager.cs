@@ -23,30 +23,33 @@ public class PlayerBattleManager : MonoBehaviour
         for (int i = 0; i < characterCount; i++)
         {
             float angle = i * Mathf.PI * 2 / characterCount;
-            Vector3 pos = new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle)) * radius;
-            Vector3 spawnPos = spawnArea.position + pos;
+            Vector3 offset = new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle)) * radius;
+            Vector3 pos = spawnArea.position + offset;
 
-            GameObject go = Instantiate(characterPrefab, spawnPos, Quaternion.identity);
+            GameObject go = Instantiate(characterPrefab, pos, Quaternion.identity);
             go.name = $"Fighter_{i + 1}";
-            players.Add(go.GetComponent<PlayerSetup>());
+
+            PlayerSetup setup = go.GetComponentInChildren<PlayerSetup>();
+            if (setup != null)
+            {
+                players.Add(setup);
+            }
         }
     }
 
-
     public Transform GetRandomTarget(PlayerSetup requester)
     {
-        List<PlayerSetup> alive = players.FindAll(c => c != requester && c.isAlive);
+        List<PlayerSetup> alive = players.FindAll(p => p != requester && p.isAlive);
         if (alive.Count == 0) return null;
         return alive[Random.Range(0, alive.Count)].transform;
     }
 
     public void CheckBattleState()
     {
-        List<PlayerSetup> alive = players.FindAll(c => c.isAlive);
+        var alive = players.FindAll(p => p.isAlive);
         if (alive.Count == 1)
         {
             Debug.Log("🏆 Winner: " + alive[0].name);
-            PlayerUIManager.Instance.ShowWinner(alive[0].name);
         }
     }
 }
