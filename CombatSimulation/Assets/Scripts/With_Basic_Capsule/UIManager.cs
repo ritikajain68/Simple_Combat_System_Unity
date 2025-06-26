@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+
 public class UIManager : MonoBehaviour
 {
     public static UIManager Instance;
@@ -11,12 +12,14 @@ public class UIManager : MonoBehaviour
     {
         Instance = this;
         winnerText.text = "";
-        winnerCanvas.SetActive(false);
+        winnerText.gameObject.SetActive(false);
     }
 
     public void ShowWinner(string name)
     {
         winnerCanvas.SetActive(true);
+        winnerText.gameObject.SetActive(true);
         winnerText.text = $"{name} Wins!";
+        Debug.Log($"Winner: {name}");
     }
 }

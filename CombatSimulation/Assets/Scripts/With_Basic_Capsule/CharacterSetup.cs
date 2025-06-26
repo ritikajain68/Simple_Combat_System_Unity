@@ -1,68 +1,97 @@
 using UnityEngine;
-using UnityEngine.AI;
 
 public class CharacterSetup : MonoBehaviour
 {
-    public float health = 100f;
-    public float speed = 3.5f;
+    public CharacterSetup opponentCharacter;
+    public HealthBar characterHealthBar;
+    public CharacterMovement characterMovement;
     public Weapon weapon;
-    public bool isAlive = true;
+    public CharacterStatsData characterStatsData = new();
 
-    private NavMeshAgent agent;
-    private Transform target;
+    [Header("Target Settings")]
+    public float TargetRange = 10f;
+    public bool isTargetInRange = false;
+    private float lastFireTime = 0f;
+
+    public bool isAlive = true;
 
     void Start()
     {
-        agent = GetComponent<NavMeshAgent>();
-
-        if (!agent.isOnNavMesh)
-        {
-            Debug.LogWarning($"{gameObject.name} is not on the NavMesh!");
-            return;
-        }
-
-        weapon = GetComponentInChildren<Weapon>();
-        InvokeRepeating(nameof(FindTarget), 0f, 1f);
-        InvokeRepeating(nameof(Attack), 1f, weapon.attackSpeed);
+        characterMovement ??= GetComponent<CharacterMovement>();
+        characterHealthBar ??= GetComponent<HealthBar>();
+        weapon ??= GetComponentInChildren<Weapon>();
+        FindNewTarget();
     }
 
     void Update()
     {
-        if (!isAlive || target == null) return;
+        if (!isAlive) return;
 
-        agent.SetDestination(target.position);
-
-        if (Vector3.Distance(transform.position, target.position) <= weapon.range)
+        if (opponentCharacter == null || !opponentCharacter.isAlive)
         {
-            Vector3 dir = (target.position - transform.position).normalized;
-            Quaternion rot = Quaternion.LookRotation(dir);
-            transform.rotation = Quaternion.Slerp(transform.rotation, rot, Time.deltaTime * 5f);
+            FindNewTarget();
+        }
+
+        if (opponentCharacter != null && opponentCharacter.characterHealthBar.CheckIfPlayerAlive())
+        {
+            isTargetInRange = weapon.CanFire(opponentCharacter.characterHealthBar);
+
+            if (isTargetInRange)
+            {
+                Attack();
+            }
+            else
+            {
+                MoveTowardsTarget();
+            }
         }
     }
 
-    public void FindTarget()
+    public void FindNewTarget()
     {
-        target = BattleManager.Instance.GetRandomTarget(this);
+        GameObject newTarget = Spawner.Instance.GetRandomTarget(this);
+        if (newTarget != null && newTarget != gameObject)
+        {
+            opponentCharacter = newTarget.GetComponent<CharacterSetup>();
+            Debug.Log($"{gameObject.name} targets {opponentCharacter.name}");
+        }
+        else
+        {
+            opponentCharacter = null;
+            Debug.Log($"{gameObject.name} found no valid target.");
+        }
+    }
+
+    public void MoveTowardsTarget()
+    {
+        characterMovement.targetPosition = opponentCharacter.transform;
     }
 
     public void Attack()
     {
-        if (!isAlive || target == null) return;
-
-        if (Vector3.Distance(transform.position, target.position) <= weapon.range)
+        if (Time.time - lastFireTime >= weapon.attackSpeed)
         {
-            weapon.Fire(target);
+            weapon.Fire(opponentCharacter.characterHealthBar.transform);
+            lastFireTime = Time.time;
         }
     }
 
-    public void TakeDamage(float amount)
+    [System.Serializable]
+    public class CharacterStatsData
     {
-        health -= amount;
-        if (health <= 0f && isAlive)
+        public string characterName;
+        public int KillCount;
+    }
+
+    [System.Serializable]
+    public class CharacterStats : MonoBehaviour
+    {
+        public CharacterStatsData characterStatsData = new();
+
+        public void AddKill()
         {
-            isAlive = false;
-            gameObject.SetActive(false);
-            BattleManager.Instance.CheckBattleState();
+            characterStatsData.KillCount++;
+            Debug.Log($"{gameObject.name} has {characterStatsData.KillCount} kills.");
         }
     }
 }

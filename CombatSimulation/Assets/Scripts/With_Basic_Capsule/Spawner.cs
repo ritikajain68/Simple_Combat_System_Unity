@@ -3,42 +3,110 @@ using System.Collections.Generic;
 
 public class Spawner : MonoBehaviour
 {
-    [Header("Spawner Settings")]
+    public static Spawner Instance;
+    [Header("Game Settings")]
+    public GameObject spawnParent;
     public GameObject characterPrefab;
-    public int characterCount = 10;
-    public float spawnRadius = 10f;
+    public List<Transform> validSpawnPoints;
+    public Transform spawnPointsParent;
+    public int numberOfCharactersToSpawn;
 
-    [Header("Spawn Area Reference")]
-    public Transform centerPoint;
+    [Header("Game State")]
+    public List<GameObject> characters_gameObject = new List<GameObject>();
+    public List<CharacterSetup> characters = new List<CharacterSetup>();
 
-    public List<GameObject> SpawnedCharacters { get; private set; } = new List<GameObject>();
+    [Header("Progress")]
+    public Dictionary<string, CharacterSetup.CharacterStatsData> characterStatsDictionary = new Dictionary<string, CharacterSetup.CharacterStatsData>();
 
-    public void SpawnCharacters()
+    private void Awake()
     {
-        ClearExisting();
+        Instance = this;
+    }
+    private void Start()
+    {
+        AssignSpawnPoints();
+        //SpawnPlayers();
+    }
 
-        for (int i = 0; i < characterCount; i++)
+    public void AssignSpawnPoints()
+    {
+        if (spawnPointsParent == null)
         {
-            Vector3 randomPos = GetRandomPosition(centerPoint.position, spawnRadius);
-            GameObject newChar = Instantiate(characterPrefab, randomPos, Quaternion.identity);
-            newChar.name = $"Fighter_{i + 1}";
-            SpawnedCharacters.Add(newChar);
+            Debug.LogError("SpawnPoints parent GameObject not found!");
+            return;
+        }
+        validSpawnPoints = new List<Transform>();
+
+        foreach (Transform child in spawnPointsParent.transform)
+        {
+            if (child.CompareTag("SpawnPoint"))
+            {
+                validSpawnPoints.Add(child);
+            }
+        }
+        if (validSpawnPoints.Count <= 0)
+        {
+            Debug.LogError("No spawn points found in the spawnParent!");
+            return;
+        }
+        numberOfCharactersToSpawn = validSpawnPoints.Count;
+    }
+
+    public void SpawnPlayers()
+    {
+        for (int i = 0; i < numberOfCharactersToSpawn; i++)
+        {
+            GameObject character = Instantiate(characterPrefab, GetPosition(i), Quaternion.identity);
+            character.transform.SetParent(validSpawnPoints[i].transform);
+            validSpawnPoints[i].name = "SpawnPoint_" + i;
+            character.name = "Player_" + i;
+            characters_gameObject.Add(character);
+
+            var setup = character.GetComponent<CharacterSetup>();
+            var stats = new CharacterSetup.CharacterStatsData { characterName = character.name, KillCount = 0 };
+
+            setup.characterStatsData = stats;
+            characters.Add(setup);
+            setup.FindNewTarget();
+            characterStatsDictionary.Add(character.name, stats);
         }
     }
 
-    private Vector3 GetRandomPosition(Vector3 center, float radius)
+    private Vector3 GetPosition(int characterIndex)
     {
-        Vector2 randCircle = Random.insideUnitCircle * radius;
-        return new Vector3(center.x + randCircle.x, center.y, center.z + randCircle.y);
+        if (validSpawnPoints.Count == 0)
+        {
+            Debug.LogError("No spawn points available!");
+            return Vector3.zero;
+        }
+
+        if (characterIndex >= validSpawnPoints.Count)
+        {
+            Debug.LogWarning("Character index exceeds spawn points count. Wrapping around.");
+            return validSpawnPoints[characterIndex % validSpawnPoints.Count].position;
+        }
+        return validSpawnPoints[characterIndex].position;
+    }
+    public GameObject GetRandomTarget(CharacterSetup requester)
+    {
+        List<CharacterSetup> alive = characters.FindAll(c => c != requester && c.isAlive);
+        if (alive.Count == 0) return null;
+        return alive[Random.Range(0, alive.Count)].gameObject;
     }
 
-    public void ClearExisting()
+    public void CheckBattleState()
     {
-        foreach (GameObject obj in SpawnedCharacters)
+        List<CharacterSetup> alive = characters.FindAll(c => c.isAlive);
+        if (alive.Count == 1)
         {
-            if (obj != null)
-                Destroy(obj);
+            string winner = alive[0].name;
+            Debug.Log("Final Survivor: " + winner);
+            UIManager.Instance.ShowWinner(winner);
         }
-        SpawnedCharacters.Clear();
+    }
+    public void ExitGame()
+    {
+        Debug.Log("Exiting game...");
+        Application.Quit();
     }
 }
