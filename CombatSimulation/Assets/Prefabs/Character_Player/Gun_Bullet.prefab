@@ -12,8 +12,8 @@ GameObject:
   - component: {fileID: 4467773635896876183}
   - component: {fileID: 2057956846197256509}
   - component: {fileID: 4059916320802882233}
-  - component: {fileID: 8541534955043658443}
   - component: {fileID: 7015974378932673373}
+  - component: {fileID: 5457990626382522596}
   m_Layer: 6
   m_Name: Gun_Bullet
   m_TagString: Untagged
@@ -116,21 +116,6 @@ Rigidbody:
   m_Interpolate: 1
   m_Constraints: 0
   m_CollisionDetection: 2
---- !u!114 &8541534955043658443
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6564445118473048527}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ac82cf1db9c5f5045b328cd0ec65554f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  damage: 25
-  lifetime: 5
-  owner: {fileID: 0}
 --- !u!135 &7015974378932673373
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -152,3 +137,22 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.014923286
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &5457990626382522596
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6564445118473048527}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac82cf1db9c5f5045b328cd0ec65554f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  damage: 20
+  speed: 10
+  hitThreshold: 0.5
+  maxLifetime: 5
+  lifetime: 5
+  target: {fileID: 0}
+  owner: {fileID: 0}

@@ -11,12 +11,14 @@ public class PlayerUIManager : MonoBehaviour
     {
         Instance = this;
         winnerText.text = "";
-        winnerCanvas.SetActive(false);
+        winnerText.gameObject.SetActive(false);
     }
 
     public void ShowWinner(string name)
     {
         winnerCanvas.SetActive(true);
+        winnerText.gameObject.SetActive(true);
         winnerText.text = $"{name} Wins!";
+        Debug.Log($"Winner: {name}");
     }
 }

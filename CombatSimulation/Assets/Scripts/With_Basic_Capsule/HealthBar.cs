@@ -13,9 +13,7 @@ public class HealthBar : MonoBehaviour
     public Slider healthBarSlider;
     public Vector3 offset = new Vector3(0, 2f, 0);
     private Camera mainCamera;
-
-    public event Action<float> OnHealthChanged;
-    private CharacterSetup character;
+    public event Action<float> OnHealthChanged;    
 
     void Start()
     {

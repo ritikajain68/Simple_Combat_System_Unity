@@ -5,7 +5,6 @@ public class Spawner : MonoBehaviour
 {
     public static Spawner Instance;
     [Header("Game Settings")]
-    public GameObject spawnParent;
     public GameObject characterPrefab;
     public List<Transform> validSpawnPoints;
     public Transform spawnPointsParent;
@@ -25,7 +24,6 @@ public class Spawner : MonoBehaviour
     private void Start()
     {
         AssignSpawnPoints();
-        //SpawnPlayers();
     }
 
     public void AssignSpawnPoints()

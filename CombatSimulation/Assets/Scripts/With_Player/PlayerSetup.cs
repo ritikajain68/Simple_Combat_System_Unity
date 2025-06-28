@@ -4,108 +4,178 @@ using System.Linq;
 
 public class PlayerSetup : MonoBehaviour
 {
-    public float maxHealth = 1000f;
-    public float health ;
-    public float speed = 3.5f;
-    public bool isAlive = true;
+    public PlayerSetup opponentCharacter;
+    public PlayerAnimator animator;
 
-    public Animator animator;
-    public NavMeshAgent agent;
-    public GameObject weaponPrefab;
+    public PlayerHealthBar characterHealthBar;
+    public PlayerMovement movement;
     public PlayerWeapon weapon;
-    private GameObject weaponInstance;
-    private Transform bulletSpawnPoint;
-    private Transform target;
+    public PlayerStatsData playerStatsData = new();
 
+    [Header("Stats")]
+    public float TargetRange = 10f;
+    public bool isTargetInRange = false;
+    private float lastFireTime = 0f;
+    public bool isAlive = true;
+    
     void Start()
-    {        
-        health = maxHealth;
-        agent.speed = speed;
+    {
+        movement ??= GetComponent<PlayerMovement>();
+        characterHealthBar ??= GetComponent<PlayerHealthBar>();
+        weapon ??= GetComponent<PlayerWeapon>();
+        animator ??= GetComponent<PlayerAnimator>();  
+        FindNewTarget();
 
-        AttachWeaponToHand();
-        if (weapon == null)
-        {
-            Debug.LogError(" Weapon not attached properly.");
-            return;
-        }
-        InvokeRepeating(nameof(FindTarget), 0f, 1f);
-        float randomDelay = Random.Range(0f, weapon.attackSpeed);
-        InvokeRepeating(nameof(Attack), randomDelay, weapon.attackSpeed);
+        // health = maxHealth;
+        // isAlive = true;
+
+        // agent ??= GetComponent<NavMeshAgent>();
+        // animator ??= GetComponentInChildren<Animator>();
+
+        // if (!agent || !animator || !movement)
+        // {
+        //     Debug.LogError("Missing required components.");
+        //     return;
+        // }
+
+        // AttachWeaponToHand();
+        // if (weapon == null)
+        // {
+        //     Debug.LogError("Weapon not attached properly.");
+        //     return;
+        // }
+
+        // movement.speed = agent.speed;
+
+        // InvokeRepeating(nameof(FindTarget), 0f, 1f);
+        // float delay = Random.Range(0f, weapon.attackSpeed);
+        // InvokeRepeating(nameof(Attack), delay, weapon.attackSpeed);
     }
 
     void Update()
     {
-        if (!isAlive || target == null) return;
+        if (!isAlive || PlayerSpawner.IsGameOver) return;
 
-        agent.SetDestination(target.position);
-
-        bool isMoving = agent.velocity.magnitude > 0.1f;
-        animator.SetBool("isWalking", isMoving);
-
-        if (Vector3.Distance(transform.position, target.position) <= weapon.range)
+        if (opponentCharacter == null || !opponentCharacter.isAlive)
         {
-            // Face target
-            Vector3 dir = (target.position - transform.position).normalized;
-            Quaternion rot = Quaternion.LookRotation(dir);
-            transform.rotation = Quaternion.Slerp(transform.rotation, rot, Time.deltaTime * 5f);
+            FindNewTarget();
         }
-    }
 
-    void FindTarget()
-    {
-        target = PlayerBattleManager.Instance.GetRandomTarget(this);
-    }
-
-    void Attack()
-    {
-        if (!isAlive || target == null) return;
-
-        float dist = Vector3.Distance(transform.position, target.position);
-        if (dist <= weapon.range)
+        if (opponentCharacter != null && opponentCharacter.characterHealthBar.CheckIfPlayerAlive())
         {
-            animator.SetTrigger("isShooting");
-            weapon.Fire(target);
-        }
-    }
+            isTargetInRange = weapon.CanFire(opponentCharacter.characterHealthBar);
 
-    public void TakeDamage(float amount)
-    {
-        health -= amount;
-        health = Mathf.Clamp(health, 0, maxHealth);
-
-        if (health <= 0f && isAlive)
-        {
-            isAlive = false;
-            gameObject.SetActive(false);
-            transform.parent?.gameObject.SetActive(false); // safely disables parent container
-
-            PlayerBattleManager.Instance.CheckBattleState();
-            Debug.Log($"{gameObject.name} took fatal damage.");
-        }
-    }
-
-    void AttachWeaponToHand()
-    {        
-        Transform hand = GetComponentsInChildren<Transform>()
-                         .FirstOrDefault(t => t.CompareTag("WeaponSocket"));
-
-        if (hand != null && weaponPrefab != null)
-        {
-            weaponInstance = Instantiate(weaponPrefab, hand);
-            weaponInstance.transform.localPosition = Vector3.zero;
-            weaponInstance.transform.localRotation = Quaternion.identity;
-
-            weapon = weaponInstance.GetComponent<PlayerWeapon>();
-
-            bulletSpawnPoint = weaponInstance.transform.Find("Barrel");
-            if (bulletSpawnPoint != null)
-                weapon.bulletSpawnPoint = bulletSpawnPoint;
+            if (isTargetInRange)
+            {
+                Debug.Log($"{gameObject.name} is in range to attack {opponentCharacter.name}");
+                Attack();
+            }
             else
-                Debug.LogWarning(" Barrel not found on weapon prefab.");
+            {
+                Debug.Log($"{gameObject.name} is moving towards {opponentCharacter.name}");
+                MoveTowardsTarget();
+            }
+        }
+    }
+
+    public void FindNewTarget()
+    {
+        GameObject newTarget = PlayerSpawner.Instance.GetRandomTarget(this);
+        if (newTarget != null && newTarget != gameObject)
+        {
+            opponentCharacter = newTarget.GetComponent<PlayerSetup>();
+            //Debug.Log($"{gameObject.name} targets {opponentCharacter.name}");
         }
         else
         {
-            Debug.LogError("WeaponSocket or weaponPrefab is missing.");
+            opponentCharacter = null;
+            //Debug.Log($"{gameObject.name} found no valid target.");
+        }
+    }
+
+
+    public void MoveTowardsTarget()
+    {
+        movement.targetPosition = opponentCharacter.transform;
+        animator?.SetWalking(true);
+    }
+
+    public void Attack()
+    {
+        Debug.Log($"{gameObject.name} attacking {opponentCharacter.name}");
+        if (Time.time - lastFireTime >= weapon.attackSpeed)
+        {
+            if (movement.navMeshAgent.velocity.magnitude < 0.1f)
+            {
+                animator?.SetWalking(false);
+            }
+            animator?.TriggerShoot();
+
+            weapon.Fire(opponentCharacter.transform, this);
+            lastFireTime = Time.time;
+        }
+    }
+
+    // void Attack()
+    // {
+    //     if (!isAlive || target == null) return;
+
+    //     if (weapon.CanFire(target))
+    //     {
+    //         animator.SetTrigger("isShooting");
+    //         weapon.Fire(target);
+    //     }
+    // }
+
+    // public void TakeDamage(float amount)
+    // {
+    //     health -= amount;
+    //     health = Mathf.Clamp(health, 0, maxHealth);
+
+    //     if (health <= 0f && isAlive)
+    //     {
+    //         isAlive = false;
+    //         Debug.Log($"{gameObject.name} died.");
+    //         gameObject.SetActive(false);
+    //         transform.parent?.gameObject.SetActive(false);
+    //         PlayerBattleManager.Instance.CheckBattleState();
+    //     }
+    // }
+
+    // void AttachWeaponToHand()
+    // {
+    //     Transform hand = GetComponentsInChildren<Transform>()
+    //                      .FirstOrDefault(t => t.CompareTag("WeaponSocket"));
+
+    //     if (hand == null || weaponPrefab == null)
+    //     {
+    //         Debug.LogError("WeaponSocket or weaponPrefab missing.");
+    //         return;
+    //     }
+
+    //     weaponInstance = Instantiate(weaponPrefab, hand);
+    //     weaponInstance.transform.localPosition = Vector3.zero;
+    //     weaponInstance.transform.localRotation = Quaternion.identity;
+
+    //     weapon = weaponInstance.GetComponent<PlayerWeapon>();
+    //     bulletSpawnPoint = weaponInstance.transform.Find("Barrel");
+
+    //     if (bulletSpawnPoint != null)
+    //         weapon.bulletSpawnPoint = bulletSpawnPoint;
+    //     else
+    //         Debug.LogWarning("Barrel not found on weapon prefab.");
+    // }
+
+    [System.Serializable]
+    public class PlayerStatsData
+    {
+        public string playerName;
+        public int killCount;
+
+        public void AddKill()
+        {
+            killCount++;
+            Debug.Log($"{playerName} has {killCount} kills.");
         }
     }
 }

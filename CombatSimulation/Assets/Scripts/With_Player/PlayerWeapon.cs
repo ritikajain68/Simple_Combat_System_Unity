@@ -3,31 +3,60 @@ using UnityEngine;
 public class PlayerWeapon : MonoBehaviour
 {
     public GameObject bulletPrefab;
-    public float bulletSpeed = 30f;
     public float attackSpeed = 1.25f;
     public float range = 15f;
     public Transform bulletSpawnPoint;
+    public PlayerSetup playerSetup;    
 
-    public void Fire(Transform target)
+    public void Fire(Transform target, PlayerSetup shooter)
     {
-        if (target == null || bulletSpawnPoint == null) return;
-
-        Vector3 aim = target.position + Vector3.up * 1.2f;
-        Vector3 direction = (aim - bulletSpawnPoint.position).normalized;
-
-        GameObject bullet = Instantiate(bulletPrefab, bulletSpawnPoint.position, Quaternion.LookRotation(direction));
-        bullet.transform.localScale = Vector3.one * 1.5f;
-
-        PlayerBullet pb = bullet.GetComponent<PlayerBullet>();
-        if (pb != null)
+        if (bulletPrefab == null || bulletSpawnPoint == null)
         {
-            pb.owner = GetComponentInParent<PlayerSetup>();
+            Debug.LogError("Bullet prefab or firePoint is null.");
+            return;
         }
 
-        Rigidbody rb = bullet.GetComponent<Rigidbody>();
-        if (rb != null)
+        GameObject bulletObj = Instantiate(bulletPrefab, bulletSpawnPoint.position, Quaternion.identity);
+        PlayerBullet bullet = bulletObj.GetComponent<PlayerBullet>();
+
+        if (bullet != null)
         {
-            rb.linearVelocity = direction * bulletSpeed;
+            bullet.Init(target, shooter);
         }
+    }
+
+    private void Start()
+    {
+        playerSetup = GetComponent<PlayerSetup>();
+        if (playerSetup == null)
+        {
+            Debug.LogError("PlayerSetup component not found on PlayerWeapon!");
+        }
+
+        if (bulletSpawnPoint == null)
+        {
+            foreach (Transform child in transform)
+            {
+                if (child.CompareTag("firePoint"))
+                {
+                    bulletSpawnPoint = child;
+                    break;
+                }
+            }
+
+            if (bulletSpawnPoint == null)
+            {
+                Debug.LogError("firePoint with tag not found in PlayerWeapon!");
+            }
+        }
+    }
+
+
+    public bool CanFire(PlayerHealthBar targetHealth)
+    {
+        if (targetHealth == null || !targetHealth.CheckIfPlayerAlive()) return false;
+
+        float distance = Vector3.Distance(transform.position, targetHealth.transform.position);
+        return distance <= range;
     }
 }

@@ -1,56 +1,139 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System;
 
 public class PlayerHealthBar : MonoBehaviour
 {
-    [Header("References")]
-    public Slider healthSlider;
-    public PlayerSetup player;
-    public Image fillImage;
+    [Header("Character Health Settings")]
+    public bool isAlive = true;
+    public float health;
+    public float maxHealth = 100f;
 
-    [Header("Health Colors")]
-    public Color fullHealthColor = Color.green;
-    public Color lowHealthColor = Color.red;
+    [Header("Health Bar UI")]
+    public Slider healthSlider;
+    public Image fillImage;
+    public Vector3 offset = new Vector3(0, 2f, 0);
+    private Camera mainCamera;
+
+    public event Action<float> OnHealthChanged;
 
     private void Start()
     {
-        if (player == null)
-            player = GetComponentInParent<PlayerSetup>();
+        mainCamera = Camera.main;        
+        health = maxHealth;
 
         if (healthSlider != null)
         {
-            healthSlider.minValue = 0f;
-            healthSlider.maxValue = 1f;
-
-            if (fillImage == null)
-                fillImage = healthSlider.fillRect.GetComponent<Image>();
-
-            // Make sure health is correctly initialized
-            float normalizedHealth = Mathf.Clamp01(player.health / player.maxHealth);
-            healthSlider.value = normalizedHealth;
-
-            fillImage.color = Color.Lerp(lowHealthColor, fullHealthColor, normalizedHealth);
+            healthSlider.maxValue = maxHealth;
+            healthSlider.value = health;
         }
-        Debug.Log($"Health at Start: {player.health}/{player.maxHealth}");
     }
-    
-    private void Update()
+
+    void Update()
     {
-        if (player == null || !player.isAlive || healthSlider == null) return;
+        if (healthSlider != null)
+        {
+            healthSlider.transform.position = transform.position + offset;
+            healthSlider.transform.LookAt(mainCamera.transform);
 
-        float normalizedHealth = Mathf.Clamp01(player.health / player.maxHealth);
-        healthSlider.value = normalizedHealth;
+            // float normalizedHealth = Mathf.Clamp01(health / maxHealth);
+            // healthSlider.value = health;
 
-        if (fillImage != null)
-            fillImage.color = Color.Lerp(lowHealthColor, fullHealthColor, normalizedHealth);
+            // if (fillImage != null)
+            // {
+            //     fillImage.color = Color.Lerp(lowHealthColor, fullHealthColor, normalizedHealth);
+            // }
+        }
+    }
 
-        // Rotate to face player forward direction
-        Vector3 forward = player.transform.forward;
-        forward.y = 0f;
-        if (forward != Vector3.zero)
-            transform.rotation = Quaternion.LookRotation(forward);
+    public void TakeDamage(float amount, PlayerSetup attacker)
+    {
+        Debug.Log($"{gameObject.name} took {amount} damage from {attacker?.name}");
+
+        if (!CheckIfPlayerAlive()) return;
+
+        health -= amount;
+        health = Mathf.Clamp(health, 0, maxHealth);
+
+        UpdateHealthBarUI();
+        OnHealthChanged?.Invoke(health);
+
+        if (health <= 0f)
+        {
+            // Get the correct setup reference — should be PlayerSetup
+            PlayerSetup setup = GetComponent<PlayerSetup>();
+            if (setup != null)
+            {
+                setup.isAlive = false;
+
+                if (attacker?.playerStatsData != null)
+                {
+                    attacker.playerStatsData.killCount++;
+                    Debug.Log($"{attacker.playerStatsData.playerName} now has {attacker.playerStatsData.killCount} kills.");
+                }
+
+                attacker?.FindNewTarget();
+            }
+            else
+            {
+                Debug.LogWarning("PlayerSetup component not found on this GameObject.");
+            }
+
+            gameObject.SetActive(false);
+            if (transform.parent != null)
+            {
+                transform.parent.gameObject.SetActive(false);
+            }
+
+            PlayerSpawner.Instance.CheckBattleState();
+        }
+    }
 
 
-        Debug.Log($"Health: {player.health} / {player.maxHealth}, Normalized: {normalizedHealth}");
+    public void Heal(float amount)
+    {
+        if (!CheckIfPlayerAlive()) return;
+
+        health += amount;
+        health = Mathf.Clamp(health, 0, maxHealth);
+        UpdateHealthBarUI();
+        OnHealthChanged?.Invoke(health);
+    }
+
+    public void ResetHealth()
+    {
+        health = maxHealth;
+        UpdateHealthBarUI();
+        OnHealthChanged?.Invoke(health);
+    }
+
+    public bool CheckIfPlayerAlive()
+    {
+        isAlive = health > 0f;
+        return isAlive;
+    }
+
+    private void UpdateHealthBarUI()
+    {
+        if (healthSlider != null)
+        {
+            healthSlider.value = health;
+
+            // float normalized = Mathf.Clamp01(health / maxHealth);
+            // if (fillImage != null)
+            //     fillImage.color = Color.Lerp(lowHealthColor, fullHealthColor, normalized);
+        }
+    }
+    private void HandleDeath()
+    {
+        if (healthSlider != null)
+        {
+            healthSlider.gameObject.SetActive(false);
+        }
+        gameObject.SetActive(false);
+    }
+    private void OnDestroy()
+    {
+        OnHealthChanged = null;
     }
 }
