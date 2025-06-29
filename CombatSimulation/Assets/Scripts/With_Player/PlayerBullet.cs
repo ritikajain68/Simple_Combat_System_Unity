@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class PlayerBullet : MonoBehaviour
 {
-    public float speed = 20f;
+    public float speed = 15f;
     public float damage = 10f;
     public Transform target;
     public PlayerSetup shooter;
@@ -14,24 +14,28 @@ public class PlayerBullet : MonoBehaviour
         target = targetTransform;
         shooter = shooterSetup;
 
-        if (target != null)
-        {
-            targetHealth = target.GetComponent<PlayerHealthBar>();
-
-            if (targetHealth == null)
-            {
-                Debug.LogError($"{target.name} has no PlayerHealthBar.");
-            }
-        }
-        else
+        if (target == null)
         {
             Debug.LogError("Bullet Init() received null target!");
+            Destroy(gameObject);
+            return;
+        }
+
+        targetHealth = target.GetComponent<PlayerHealthBar>();
+
+        if (targetHealth == null)
+        {
+            Debug.LogError($"{target.name} has no PlayerHealthBar.");
         }
 
         if (shooter == null)
         {
             Debug.LogError("Bullet Init() received null shooter!");
         }
+    }
+    void Start()
+    {
+        Destroy(gameObject, 5f);
     }
     void Update()
     {
@@ -41,9 +45,14 @@ public class PlayerBullet : MonoBehaviour
             return;
         }
 
+        // Move toward target
         Vector3 direction = (target.position - transform.position).normalized;
         transform.position += direction * speed * Time.deltaTime;
 
+        transform.rotation = Quaternion.LookRotation(direction);
+        Debug.DrawRay(transform.position, direction * 2f, Color.yellow);
+
+        // Hit detection
         float distanceToTarget = Vector3.Distance(transform.position, target.position);
         if (distanceToTarget < 0.5f)
         {
@@ -53,7 +62,7 @@ public class PlayerBullet : MonoBehaviour
             }
             else
             {
-                Debug.LogError("Cannot apply damage — targetHealth or shooter is null.");
+                Debug.LogWarning("Bullet hit but targetHealth or shooter is missing.");
             }
 
             Destroy(gameObject);

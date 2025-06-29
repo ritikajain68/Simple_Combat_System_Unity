@@ -3,7 +3,7 @@ using UnityEngine.AI;
 
 public class PlayerMovement : MonoBehaviour
 {
-    public PlayerAnimator animator;
+    public Animator animator;
 
     [Header("Movement Settings")]
     public float speed = 3f;
@@ -22,16 +22,13 @@ public class PlayerMovement : MonoBehaviour
     {
         playerSetup = GetComponent<PlayerSetup>();
         navMeshAgent ??= GetComponent<NavMeshAgent>();
-        animator ??= GetComponent<PlayerAnimator>();
+        animator ??= GetComponent<Animator>();
 
         if (!navMeshAgent.isOnNavMesh)
         {
             Debug.LogWarning($"{gameObject.name} is not on the NavMesh!");
             return;
         }
-
-        navMeshAgent.autoRepath = true;
-        navMeshAgent.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
 
         AddPlayerMovement();
         lastTargetPosition = Vector3.zero;
@@ -41,13 +38,13 @@ public class PlayerMovement : MonoBehaviour
         if (PlayerSpawner.IsGameOver || targetPosition == null)
         {
             navMeshAgent.ResetPath();
-            animator?.SetWalking(false);
+            animator.SetBool("isWalking", false);
             return;
         }
 
         // Animation: walking or idle
         bool isMoving = navMeshAgent.velocity.magnitude > 0.1f;
-        animator?.SetWalking(isMoving);
+        animator.SetBool("isWalking", isMoving);
 
         // Stuck detection
         if (navMeshAgent.velocity.magnitude < 0.1f)
@@ -91,8 +88,12 @@ public class PlayerMovement : MonoBehaviour
         navMeshAgent.speed = speed;
         navMeshAgent.angularSpeed = rotationSpeed;
         navMeshAgent.acceleration = 10f;
-        navMeshAgent.updateRotation = true;
-        navMeshAgent.updatePosition = true;
+
+        navMeshAgent.autoRepath = true;
+        navMeshAgent.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
+
+        //navMeshAgent.updateRotation = true;
+        //navMeshAgent.updatePosition = true;
     }
 
     public void SetTargetPosition(Transform target)
@@ -116,6 +117,14 @@ public class PlayerMovement : MonoBehaviour
 
     private void MoveToRandomNearbyPosition()
     {
+        // Vector3 randomDirection = Random.insideUnitSphere * 5f + transform.position;
+        // NavMeshHit hit;
+        // if (NavMesh.SamplePosition(randomDirection, out hit, 5f, NavMesh.AllAreas))
+        // {
+        //     navMeshAgent.SetDestination(hit.position);
+        //     SmoothRotateTowards(hit.position);
+        // }
+
         Vector3 randomDirection = new Vector3(
            Random.Range(-1f, 1f),
            0,
@@ -142,5 +151,10 @@ public class PlayerMovement : MonoBehaviour
 
         Quaternion targetRotation = Quaternion.LookRotation(direction);
         transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 5f);
+    }
+    public void SetTarget(Transform target)
+    {
+        if (target == null) return;
+        targetPosition = target;
     }
 }

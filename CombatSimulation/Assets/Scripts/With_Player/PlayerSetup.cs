@@ -5,8 +5,8 @@ using System.Linq;
 public class PlayerSetup : MonoBehaviour
 {
     public PlayerSetup opponentCharacter;
-    public PlayerAnimator animator;
-
+    public Animator animator;
+    public bool isShootingAnim = false;
     public PlayerHealthBar characterHealthBar;
     public PlayerMovement movement;
     public PlayerWeapon weapon;
@@ -23,7 +23,7 @@ public class PlayerSetup : MonoBehaviour
         movement ??= GetComponent<PlayerMovement>();
         characterHealthBar ??= GetComponent<PlayerHealthBar>();
         weapon ??= GetComponent<PlayerWeapon>();
-        animator ??= GetComponent<PlayerAnimator>();  
+        animator = GetComponent<Animator>();  
         FindNewTarget();
 
         // health = maxHealth;
@@ -97,7 +97,9 @@ public class PlayerSetup : MonoBehaviour
     public void MoveTowardsTarget()
     {
         movement.targetPosition = opponentCharacter.transform;
-        animator?.SetWalking(true);
+        float speed = movement.navMeshAgent.velocity.magnitude;
+
+        animator.SetBool("isWalking", speed > 0.1f);
     }
 
     public void Attack()
@@ -105,11 +107,11 @@ public class PlayerSetup : MonoBehaviour
         Debug.Log($"{gameObject.name} attacking {opponentCharacter.name}");
         if (Time.time - lastFireTime >= weapon.attackSpeed)
         {
-            if (movement.navMeshAgent.velocity.magnitude < 0.1f)
-            {
-                animator?.SetWalking(false);
-            }
-            animator?.TriggerShoot();
+            // if (movement.navMeshAgent.velocity.magnitude < 0.1f)
+            // {
+            //     animator?.SetWalking(false);
+            // }
+            animator.SetTrigger("isShooting");
 
             weapon.Fire(opponentCharacter.transform, this);
             lastFireTime = Time.time;

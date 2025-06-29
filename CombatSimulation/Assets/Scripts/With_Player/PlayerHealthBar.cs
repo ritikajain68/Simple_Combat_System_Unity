@@ -14,18 +14,21 @@ public class PlayerHealthBar : MonoBehaviour
     public Image fillImage;
     public Vector3 offset = new Vector3(0, 2f, 0);
     private Camera mainCamera;
+    public Color fullHealthColor = Color.green;
+    public Color lowHealthColor = Color.red;
 
     public event Action<float> OnHealthChanged;
 
     private void Start()
     {
-        mainCamera = Camera.main;        
+        mainCamera = Camera.main;
         health = maxHealth;
 
         if (healthSlider != null)
         {
             healthSlider.maxValue = maxHealth;
             healthSlider.value = health;
+            UpdateHealthBarColor();
         }
     }
 
@@ -35,21 +38,11 @@ public class PlayerHealthBar : MonoBehaviour
         {
             healthSlider.transform.position = transform.position + offset;
             healthSlider.transform.LookAt(mainCamera.transform);
-
-            // float normalizedHealth = Mathf.Clamp01(health / maxHealth);
-            // healthSlider.value = health;
-
-            // if (fillImage != null)
-            // {
-            //     fillImage.color = Color.Lerp(lowHealthColor, fullHealthColor, normalizedHealth);
-            // }
         }
     }
 
     public void TakeDamage(float amount, PlayerSetup attacker)
     {
-        Debug.Log($"{gameObject.name} took {amount} damage from {attacker?.name}");
-
         if (!CheckIfPlayerAlive()) return;
 
         health -= amount;
@@ -60,7 +53,6 @@ public class PlayerHealthBar : MonoBehaviour
 
         if (health <= 0f)
         {
-            // Get the correct setup reference — should be PlayerSetup
             PlayerSetup setup = GetComponent<PlayerSetup>();
             if (setup != null)
             {
@@ -74,10 +66,6 @@ public class PlayerHealthBar : MonoBehaviour
 
                 attacker?.FindNewTarget();
             }
-            else
-            {
-                Debug.LogWarning("PlayerSetup component not found on this GameObject.");
-            }
 
             gameObject.SetActive(false);
             if (transform.parent != null)
@@ -88,7 +76,6 @@ public class PlayerHealthBar : MonoBehaviour
             PlayerSpawner.Instance.CheckBattleState();
         }
     }
-
 
     public void Heal(float amount)
     {
@@ -118,12 +105,19 @@ public class PlayerHealthBar : MonoBehaviour
         if (healthSlider != null)
         {
             healthSlider.value = health;
-
-            // float normalized = Mathf.Clamp01(health / maxHealth);
-            // if (fillImage != null)
-            //     fillImage.color = Color.Lerp(lowHealthColor, fullHealthColor, normalized);
+            UpdateHealthBarColor(); // Update fill color when health changes
         }
     }
+
+    private void UpdateHealthBarColor()
+    {
+        if (fillImage != null)
+        {
+            float normalized = Mathf.Clamp01(health / maxHealth);
+            fillImage.color = Color.Lerp(lowHealthColor, fullHealthColor, normalized);
+        }
+    }
+
     private void HandleDeath()
     {
         if (healthSlider != null)
@@ -132,6 +126,7 @@ public class PlayerHealthBar : MonoBehaviour
         }
         gameObject.SetActive(false);
     }
+
     private void OnDestroy()
     {
         OnHealthChanged = null;
