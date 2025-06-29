@@ -16,8 +16,8 @@ public class TopDownCameraController : MonoBehaviour
     {
         cam = Camera.main;
         cam.orthographic = true;
-        transform.position = new Vector3(4.42f, 30f, 0.32f);
-        transform.rotation = new Quaternion(0.7071068f, 0f, -0.000000052f, 0.7071068f);
+        //transform.position = new Vector3(4.42f, 30f, 0.32f);
+        //transform.rotation = new Quaternion(0.7071068f, 0f, -0.000000052f, 0.7071068f);
     }
 
     private void Update()

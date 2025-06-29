@@ -11,9 +11,12 @@ public class HealthBar : MonoBehaviour
 
     [Header("Health Bar UI")]
     public Slider healthBarSlider;
+    public Image fillImage;
     public Vector3 offset = new Vector3(0, 2f, 0);
     private Camera mainCamera;
     public event Action<float> OnHealthChanged;    
+    public Color fullHealthColor = Color.green;
+    public Color lowHealthColor = Color.red;
 
     void Start()
     {
@@ -92,6 +95,16 @@ public class HealthBar : MonoBehaviour
         if (healthBarSlider != null)
         {
             healthBarSlider.value = health;
+            UpdateHealthBarColor();
+        }
+    }
+
+    private void UpdateHealthBarColor()
+    {
+        if (fillImage != null)
+        {
+            float normalized = Mathf.Clamp01(health / maxHealth);
+            fillImage.color = Color.Lerp(lowHealthColor, fullHealthColor, normalized);
         }
     }
 

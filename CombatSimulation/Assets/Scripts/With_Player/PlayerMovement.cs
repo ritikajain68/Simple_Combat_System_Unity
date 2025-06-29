@@ -116,15 +116,7 @@ public class PlayerMovement : MonoBehaviour
     }
 
     private void MoveToRandomNearbyPosition()
-    {
-        // Vector3 randomDirection = Random.insideUnitSphere * 5f + transform.position;
-        // NavMeshHit hit;
-        // if (NavMesh.SamplePosition(randomDirection, out hit, 5f, NavMesh.AllAreas))
-        // {
-        //     navMeshAgent.SetDestination(hit.position);
-        //     SmoothRotateTowards(hit.position);
-        // }
-
+    {       
         Vector3 randomDirection = new Vector3(
            Random.Range(-1f, 1f),
            0,

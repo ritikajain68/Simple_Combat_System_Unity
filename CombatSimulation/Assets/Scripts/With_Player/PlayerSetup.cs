@@ -118,56 +118,6 @@ public class PlayerSetup : MonoBehaviour
         }
     }
 
-    // void Attack()
-    // {
-    //     if (!isAlive || target == null) return;
-
-    //     if (weapon.CanFire(target))
-    //     {
-    //         animator.SetTrigger("isShooting");
-    //         weapon.Fire(target);
-    //     }
-    // }
-
-    // public void TakeDamage(float amount)
-    // {
-    //     health -= amount;
-    //     health = Mathf.Clamp(health, 0, maxHealth);
-
-    //     if (health <= 0f && isAlive)
-    //     {
-    //         isAlive = false;
-    //         Debug.Log($"{gameObject.name} died.");
-    //         gameObject.SetActive(false);
-    //         transform.parent?.gameObject.SetActive(false);
-    //         PlayerBattleManager.Instance.CheckBattleState();
-    //     }
-    // }
-
-    // void AttachWeaponToHand()
-    // {
-    //     Transform hand = GetComponentsInChildren<Transform>()
-    //                      .FirstOrDefault(t => t.CompareTag("WeaponSocket"));
-
-    //     if (hand == null || weaponPrefab == null)
-    //     {
-    //         Debug.LogError("WeaponSocket or weaponPrefab missing.");
-    //         return;
-    //     }
-
-    //     weaponInstance = Instantiate(weaponPrefab, hand);
-    //     weaponInstance.transform.localPosition = Vector3.zero;
-    //     weaponInstance.transform.localRotation = Quaternion.identity;
-
-    //     weapon = weaponInstance.GetComponent<PlayerWeapon>();
-    //     bulletSpawnPoint = weaponInstance.transform.Find("Barrel");
-
-    //     if (bulletSpawnPoint != null)
-    //         weapon.bulletSpawnPoint = bulletSpawnPoint;
-    //     else
-    //         Debug.LogWarning("Barrel not found on weapon prefab.");
-    // }
-
     [System.Serializable]
     public class PlayerStatsData
     {

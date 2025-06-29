@@ -27,7 +27,7 @@ public class PlayerBattleManager : MonoBehaviour
             Vector3 pos = spawnArea.position + offset;
 
             GameObject go = Instantiate(characterPrefab, pos, Quaternion.identity);
-            go.name = $"Fighter_{i + 1}";
+            go.name = $"Player {i + 1}";
 
             PlayerSetup setup = go.GetComponentInChildren<PlayerSetup>();
             if (setup != null)
@@ -49,7 +49,7 @@ public class PlayerBattleManager : MonoBehaviour
         var alive = players.FindAll(p => p.isAlive);
         if (alive.Count == 1)
         {
-            Debug.Log("🏆 Winner: " + alive[0].name);
+            Debug.Log(" Winner: " + alive[0].name);
         }
     }
 }
