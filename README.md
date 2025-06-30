@@ -55,8 +55,6 @@ Characters act independently:
 - Shoot if in range and visible
 - Track kills and update stats
 
-Combat timing is handled using `InvokeRepeating()` for regular actions (targeting and attacking).
-
 ---
 
 ### 3. Event-Based Lifecycle & Game State
@@ -85,15 +83,15 @@ Combat timing is handled using `InvokeRepeating()` for regular actions (targetin
 
 - Spawn points are manually placed and tagged in the scene.
 - Configurable fields (attack speed, health, damage) are exposed in the Unity Inspector.
-- Tools like `PlayerSpawner` and `CameraUIButton` support quick iteration and camera control during testing.
+- Scripts like `PlayerSpawner` and `CameraUIButton` support quick iteration and camera control during testing.
 
 ---
 
 ###  Benefits of This Design
 
 - **Decoupled and Clean** — each script does one job well.
-- **Scalable** — supports any number of characters, dynamic stat tuning, and battlefield sizes.
-- **Extensible** — new logic (e.g., melee, special abilities, teams) can be added easily.
+- **Scalable** — supports any number of characters.
+- **Extensible** — new logic can be added easily.
 - **Debuggable** — logs, raycasts, and health bars offer complete runtime transparency.
 
 ---
